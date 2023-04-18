@@ -52,6 +52,7 @@ contract RegistrarGov is Ownable, IRegistrarGov {
         bool addressAccepted,
         string calldata moduleName
     ) external onlyOwner {
+        require(module != address(0), "Address can't be zero");
         // Whitelist either bytecode or address
         require(
             bytecodeAccepted != addressAccepted || // Can't accept both, but

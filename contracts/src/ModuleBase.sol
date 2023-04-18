@@ -26,13 +26,12 @@ abstract contract ModuleBase is ICheqModule {
 
     constructor(address registrar, DataTypes.WTFCFees memory _fees) {
         if (registrar == address(0)) revert InitParamsInvalid();
-        REGISTRAR = registrar; // Question: Should this be before or after rule checking?
-
         if (BPS_MAX < _fees.writeBPS) revert FeeTooHigh();
         if (BPS_MAX < _fees.transferBPS) revert FeeTooHigh();
         if (BPS_MAX < _fees.fundBPS) revert FeeTooHigh();
         if (BPS_MAX < _fees.cashBPS) revert FeeTooHigh();
 
+        REGISTRAR = registrar;
         dappOperatorFees[msg.sender] = _fees;
 
         emit ModuleBaseConstructed(registrar, block.timestamp);
@@ -64,77 +63,81 @@ abstract contract ModuleBase is ICheqModule {
         revenue[dappOperator][currency] += fee;
     }
 
-    // function processWrite(
-    //     address caller,
-    //     address owner,
-    //     uint256 cheqId,
-    //     address currency,
-    //     uint256 escrowed,
-    //     uint256 instant,
-    //     bytes calldata initData
-    // ) external virtual override onlyRegistrar returns (uint256) {
-    //     // Add module logic here
-    //     return fees.writeBPS;
-    // }
+    function processWrite(
+        address caller,
+        address owner,
+        uint256 cheqId,
+        address currency,
+        uint256 escrowed,
+        uint256 instant,
+        bytes calldata writeData
+    ) external virtual override onlyRegistrar returns (uint256) {
+        address dappOperator = abi.decode(writeData, (address));
+        // Add module logic here
+        return takeReturnFee(currency, escrowed + instant, dappOperator, 0);
+    }
 
-    // function processTransfer(
-    //     address caller,
-    //     address approved,
-    //     address owner,
-    //     address from,
-    //     address to,
-    //     uint256 cheqId,
-    //     address currency,
-    //     uint256 escrowed,
-    //     uint256 createdAt,
-    //     bytes calldata data
-    // ) external virtual override onlyRegistrar returns (uint256) {
-    //     // Add module logic here
-    //     return fees.transferBPS;
-    // }
+    function processTransfer(
+        address caller,
+        address approved,
+        address owner,
+        address from,
+        address to,
+        uint256 cheqId,
+        address currency,
+        uint256 escrowed,
+        uint256 createdAt,
+        bytes calldata transferData
+    ) external virtual override onlyRegistrar returns (uint256) {
+        address dappOperator = abi.decode(transferData, (address));
+        // Add module logic here
+        return takeReturnFee(currency, escrowed, dappOperator, 1);
+    }
 
-    // function processFund(
-    //     address caller,
-    //     address owner,
-    //     uint256 amount,
-    //     uint256 instant,
-    //     uint256 cheqId,
-    //     DataTypes.Cheq calldata cheq,
-    //     bytes calldata initData
-    // ) external virtual override onlyRegistrar returns (uint256) {
-    //     // Add module logic here
-    //     return fees.fundBPS;
-    // }
+    function processFund(
+        address caller,
+        address owner,
+        uint256 amount,
+        uint256 instant,
+        uint256 cheqId,
+        DataTypes.Cheq calldata cheq,
+        bytes calldata fundData
+    ) external virtual override onlyRegistrar returns (uint256) {
+        address dappOperator = abi.decode(fundData, (address));
+        // Add module logic here
+        return takeReturnFee(cheq.currency, amount + instant, dappOperator, 2);
+    }
 
-    // function processCash(
-    //     address caller,
-    //     address owner,
-    //     address to,
-    //     uint256 amount,
-    //     uint256 cheqId,
-    //     DataTypes.Cheq calldata cheq,
-    //     bytes calldata initData
-    // ) external virtual override onlyRegistrar returns (uint256) {
-    //     // Add module logic here
-    //     return fees.cashBPS;
-    // }
+    function processCash(
+        address caller,
+        address owner,
+        address to,
+        uint256 amount,
+        uint256 cheqId,
+        DataTypes.Cheq calldata cheq,
+        bytes calldata cashData
+    ) external virtual override onlyRegistrar returns (uint256) {
+        address dappOperator = abi.decode(cashData, (address));
+        // Add module logic here
+        return takeReturnFee(cheq.currency, amount, dappOperator, 3);
+    }
 
-    // function processApproval(
-    //     address caller,
-    //     address owner,
-    //     address to,
-    //     uint256 cheqId,
-    //     DataTypes.Cheq calldata cheq,
-    //     bytes memory initData
-    // ) external virtual override onlyRegistrar {
-    //     // Add module logic here
-    // }
+    function processApproval(
+        address caller,
+        address owner,
+        address to,
+        uint256 cheqId,
+        DataTypes.Cheq calldata cheq,
+        bytes memory initData
+    ) external virtual override onlyRegistrar {
+        // Add module logic here
+    }
 
-    // function processTokenURI(
-    //     uint256 tokenId
-    // ) external view virtual override returns (string memory) {
-    //     return string(abi.encodePacked(_URI, tokenId));
-    // }
+    function processTokenURI(
+        uint256 tokenId
+    ) external view virtual override returns (string memory) {
+        return string(abi.encodePacked(_URI, tokenId));
+    }
 
     function getFees(
         address dappOperator

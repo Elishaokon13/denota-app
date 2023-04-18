@@ -17,7 +17,6 @@ import {CheqBase64Encoding} from "./libraries/CheqBase64Encoding.sol";
                     \      |       /
                       CheqRegistrar
  */
-
 /**
  * @title  The Cheq Payment Registrar
  * @notice The main contract where users can WTFCA cheqs
@@ -34,6 +33,11 @@ contract CheqRegistrar is
 
     mapping(uint256 => DataTypes.Cheq) private _cheqInfo;
     uint256 private _totalSupply;
+
+    modifier isMinted(uint256 cheqId) {
+        if (cheqId >= _totalSupply) revert NotMinted();
+        _;
+    }
 
     error SendFailed();
     error InvalidWrite(address, address);
@@ -88,15 +92,14 @@ contract CheqRegistrar is
         );
         unchecked {
             return _totalSupply++;
-        } // NOTE: Will this ever overflow?
+        }
     }
 
     function transferFrom(
         address from,
         address to,
         uint256 cheqId
-    ) public override(ERC721, ICheqRegistrar) {
-        if (cheqId >= _totalSupply) revert NotMinted();
+    ) public override(ERC721, ICheqRegistrar) isMinted(cheqId) {
         _transferHookTakeFee(from, to, cheqId, abi.encode(""));
         _transfer(from, to, cheqId);
     }
@@ -106,7 +109,7 @@ contract CheqRegistrar is
         uint256 amount,
         uint256 instant,
         bytes calldata fundData
-    ) external payable {
+    ) external payable isMinted(cheqId) {
         if (cheqId >= _totalSupply) revert NotMinted();
         DataTypes.Cheq storage cheq = _cheqInfo[cheqId]; // TODO module MUST check that token exists
         address owner = ownerOf(cheqId); // Is used twice
@@ -150,8 +153,7 @@ contract CheqRegistrar is
         uint256 amount,
         address to,
         bytes calldata cashData
-    ) external payable {
-        if (cheqId >= _totalSupply) revert NotMinted();
+    ) external payable isMinted(cheqId) {
         DataTypes.Cheq storage cheq = _cheqInfo[cheqId];
 
         // Module Hook
@@ -196,8 +198,7 @@ contract CheqRegistrar is
     function approve(
         address to,
         uint256 cheqId
-    ) public override(ERC721, ICheqRegistrar) {
-        if (cheqId >= _totalSupply) revert NotMinted();
+    ) public override(ERC721, ICheqRegistrar) isMinted(cheqId) {
         if (to == _msgSender()) revert SelfApproval();
 
         // Module hook
@@ -217,9 +218,7 @@ contract CheqRegistrar is
 
     function tokenURI(
         uint256 cheqId
-    ) public view override returns (string memory) {
-        if (cheqId >= _totalSupply) revert NotMinted();
-
+    ) public view override isMinted(cheqId) returns (string memory) {
         string memory _tokenData = ICheqModule(_cheqInfo[cheqId].module)
             .processTokenURI(cheqId);
 
