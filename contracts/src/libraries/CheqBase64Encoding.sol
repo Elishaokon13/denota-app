@@ -22,7 +22,7 @@ contract CheqBase64Encoding {
     // string constant TOKENDATA_CLOSE = '"}';
 
     /// https://stackoverflow.com/questions/47129173/how-to-convert-uint-to-string-in-solidity
-    function itoa32(uint x) private pure returns (uint y) {
+    function itoa32(uint x) private pure returns (uint256 y) {
         unchecked {
             require(x < 1e32);
             y = 0x3030303030303030303030303030303030303030303030303030303030303030;

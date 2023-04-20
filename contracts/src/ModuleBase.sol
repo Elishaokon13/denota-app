@@ -146,14 +146,13 @@ abstract contract ModuleBase is ICheqModule {
     }
 
     function withdrawFees(address token) public {
-        // TODO do this using shares instead of absolute amounts (transfers can't specify referer)
         uint256 payoutAmount = revenue[msg.sender][token];
-        require(payoutAmount > 1, "Insufficient revenue");
-        revenue[msg.sender][token] = 1; // Should this be set to 1 wei? Saves on gas
-        IRegistrarGov(REGISTRAR).moduleWithdraw(
-            token,
-            payoutAmount - 1,
-            msg.sender
-        );
+        revenue[msg.sender][token] = 0;
+        if (payoutAmount > 0)
+            IRegistrarGov(REGISTRAR).moduleWithdraw(
+                token,
+                payoutAmount,
+                msg.sender
+            );
     }
 }

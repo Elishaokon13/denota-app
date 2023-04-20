@@ -6,11 +6,9 @@ import "openzeppelin/token/ERC20/IERC20.sol";
 library DataTypes {
     struct Cheq {
         uint256 escrowed;
-        uint256 createdAt; // Set by caller and immutable
-        address currency; // Set by caller and immutable
+        uint256 createdAt;
+        address currency;
         address module;
-        // bool isFungible; // IDEA: Allow escrowing a single NFT
-        // bool nftEscrowed;
     }
 
     struct WTFCFees {

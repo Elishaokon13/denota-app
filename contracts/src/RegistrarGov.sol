@@ -17,6 +17,8 @@ contract RegistrarGov is Ownable, IRegistrarGov {
     mapping(address => string) internal _tokenName;
 
     // uint256 public _writeFlatFee;
+    // uint256 public registrarRevenue;
+
     // event MetadataUpdate(uint256 _tokenId);  // question how to update using this structure?
     // event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId); // todo need totalSupply
 

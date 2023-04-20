@@ -50,15 +50,18 @@ contract CheqRegistrar is
     function write(
         address currency,
         uint256 escrowed,
-        uint256 instant, // if nonFungible is supported make sure this can't be used (or use native)
+        uint256 instant,
         address owner,
         address module,
         bytes calldata moduleWriteData
     ) public payable returns (uint256) {
-        // require(msg.value >= _writeFlatFee, "INSUF_FEE"); // IDEA: discourages spamming of 0 value cheqs
         if (!validWrite(module, currency))
             revert InvalidWrite(module, currency); // Module+token whitelist check
-
+        // if (msg.value < _writeFlatFee) {
+        //     revert InsufficientValue(msg.value, _writeFlatFee);
+        // } else {
+        //     if (_writeFlatFee > 0) registrarRevenue += _writeFlatFee;
+        // }
         // Module hook (updates its storage, gets the fee)
         uint256 moduleFee = ICheqModule(module).processWrite(
             _msgSender(),
@@ -73,10 +76,12 @@ contract CheqRegistrar is
         _transferTokens(escrowed, instant, currency, owner, moduleFee, module);
 
         _mint(owner, _totalSupply);
-        _cheqInfo[_totalSupply].currency = currency;
-        _cheqInfo[_totalSupply].escrowed = escrowed;
-        _cheqInfo[_totalSupply].createdAt = block.timestamp;
-        _cheqInfo[_totalSupply].module = module;
+        _cheqInfo[_totalSupply] = DataTypes.Cheq(
+            escrowed,
+            block.timestamp,
+            currency,
+            module
+        );
 
         emit Events.Written(
             _msgSender(),
@@ -109,7 +114,7 @@ contract CheqRegistrar is
         uint256 amount,
         uint256 instant,
         bytes calldata fundData
-    ) external payable isMinted(cheqId) {
+    ) public payable isMinted(cheqId) {
         if (cheqId >= _totalSupply) revert NotMinted();
         DataTypes.Cheq storage cheq = _cheqInfo[cheqId]; // TODO module MUST check that token exists
         address owner = ownerOf(cheqId); // Is used twice
@@ -153,7 +158,7 @@ contract CheqRegistrar is
         uint256 amount,
         address to,
         bytes calldata cashData
-    ) external payable isMinted(cheqId) {
+    ) public payable isMinted(cheqId) {
         DataTypes.Cheq storage cheq = _cheqInfo[cheqId];
 
         // Module Hook
@@ -230,6 +235,112 @@ contract CheqRegistrar is
                 _moduleName[_cheqInfo[cheqId].module],
                 _tokenData
             );
+    }
+
+    /*///////////////////// BATCH FUNCTIONS ///////////////////////*/
+
+    function writeBatch(
+        address[] calldata currencies,
+        uint256[] calldata escrowedAmounts,
+        uint256[] calldata instantAmounts,
+        address[] calldata owners,
+        address[] calldata modules,
+        bytes[] calldata moduleWriteDataList
+    ) public payable returns (uint256[] memory cheqIds) {
+        uint256 numWrites = currencies.length;
+
+        require(
+            numWrites == escrowedAmounts.length &&
+                numWrites == instantAmounts.length &&
+                numWrites == owners.length &&
+                numWrites == modules.length &&
+                numWrites == moduleWriteDataList.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint256 i = 0; i < numWrites; i++) {
+            cheqIds[i] = write(
+                currencies[i],
+                escrowedAmounts[i],
+                instantAmounts[i],
+                owners[i],
+                modules[i],
+                moduleWriteDataList[i]
+            );
+        }
+    }
+
+    function transferFromBatch(
+        address[] calldata froms,
+        address[] calldata tos,
+        uint256[] calldata cheqIds
+    ) public {
+        uint256 numTransfers = froms.length;
+
+        require(
+            numTransfers == tos.length && numTransfers == cheqIds.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint256 i = 0; i < numTransfers; i++) {
+            transferFrom(froms[i], tos[i], cheqIds[i]);
+        }
+    }
+
+    function fundBatch(
+        uint256[] calldata cheqIds,
+        uint256[] calldata amounts,
+        uint256[] calldata instants,
+        bytes[] calldata fundDataList
+    ) public payable {
+        uint256 numFunds = cheqIds.length;
+
+        require(
+            numFunds == amounts.length &&
+                numFunds == instants.length &&
+                numFunds == fundDataList.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint256 i = 0; i < numFunds; i++) {
+            fund(cheqIds[i], amounts[i], instants[i], fundDataList[i]);
+        }
+    }
+
+    function cashBatch(
+        uint256[] calldata cheqIds,
+        uint256[] calldata amounts,
+        address[] calldata tos,
+        bytes[] calldata cashDataList
+    ) public payable {
+        uint256 numCash = cheqIds.length;
+
+        require(
+            numCash == amounts.length &&
+                numCash == tos.length &&
+                numCash == cashDataList.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint256 i = 0; i < numCash; i++) {
+            cash(cheqIds[i], amounts[i], tos[i], cashDataList[i]);
+        }
+    }
+
+    function approveBatch(
+        address[] memory tos,
+        uint256[] memory cheqIds
+    ) public {
+        uint256 numApprovals = tos.length;
+
+        require(
+            numApprovals == cheqIds.length,
+            "Input arrays must have the same length"
+        );
+
+        for (uint256 i = 0; i < numApprovals; i++) {
+            approve(tos[i], cheqIds[i]);
+        }
     }
 
     /*//////////////////////// HELPERS ///////////////////////////*/
