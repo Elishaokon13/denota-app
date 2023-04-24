@@ -1,5 +1,5 @@
 # Denota v0.2
-Write notas (aka cheqs) to others that are time locked and can be reversed
+Write Nota NFTs that contain payment terms and additional data
 
 Contracts implementation located at [contracts/src](contracts/src)
 
@@ -10,17 +10,21 @@ Run the command below to install from scratch:
 ```
 make fresh-install
 ```
+
 Run the front-end:
 ```
 npm run dev
 ```
+
 Run the local blockchain for deployment/testing:
 ```
 anvil
 ```
+Compile the contracts
 ```
 forge build
 ```
+
 Deploy the contracts to the blockchain (local)
 ```
 make deploy-local
@@ -32,7 +36,7 @@ export PRIVATE_KEY=YOUR_KEY
 make deploy-mumbai
 ```
 
-Run the commands below to update dependencies:
+Updating dependencies:
 ```
 forge update lib/forge-std
 forge update lib/openzeppelin-contracts
@@ -56,7 +60,7 @@ These commands are automatically run pre-push via [Husky](https://github.com/typ
 
 Install [Docker](https://docs.docker.com/desktop/install/mac-install/)
 
-To boostrap the local graph node, run: 
+To bootstrap the local graph node, run: 
 
 ```make graph-start```
 
@@ -66,13 +70,3 @@ In another tab, build and deploy the subgraph by running:
 
 ### Graph Resources/Links
 [AssemblyScript API](https://thegraph.com/docs/en/developing/assemblyscript-api/)
-
-## Polygon EthDenver notes
-
-*Why Polygon is a great technology choice for the project:*
-
-Polygon provides fast and cheap transactions, making it an ideal choice for our web3 payments upgrade. Its support for Ethereum Virtual Machine (EVM) smart contracts also allows us to easily integrate with existing Ethereum-based projects and leverage a large developer community.
-
-*Challenges or benefits encountered in the developer experience:*
-
-One challenge we encountered was navigating the differences between Polygon and Ethereum. However, the benefits of using Polygon outweighed the challenges, as we were able to quickly develop and test our project with minimal costs. Additionally, we found that the documentation and community support for Polygon were helpful in overcoming any obstacles we faced.

@@ -237,6 +237,23 @@ contract CheqRegistrar is
             );
     }
 
+    function payload(
+        uint256 cheqId,
+        string memory selector,
+        bytes calldata moduleData
+    ) external isMinted(cheqId) {
+        (bool success, ) = _cheqInfo[cheqId].module.call(
+            abi.encodeWithSignature(
+                selector, // all modules' specific function must follow this pattern
+                _msgSender(),
+                ownerOf(cheqId),
+                cheqId,
+                moduleData
+            )
+        );
+        if (!success) revert();
+    }
+
     /*///////////////////// BATCH FUNCTIONS ///////////////////////*/
 
     function writeBatch(

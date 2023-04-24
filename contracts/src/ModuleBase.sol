@@ -4,14 +4,12 @@ import {DataTypes} from "./libraries/DataTypes.sol";
 import {ICheqModule} from "./interfaces/ICheqModule.sol";
 import {IRegistrarGov} from "./interfaces/IRegistrarGov.sol";
 
-// TODO separate fee and non-fee modules (perhaps URI distinction ones as well?)
-// ERC-4906: EIP-721 Metadata Update Extension
 abstract contract ModuleBase is ICheqModule {
-    address public immutable REGISTRAR; // Question: Make this a hardcoded address?
+    address public immutable REGISTRAR;
     mapping(address => mapping(address => uint256)) public revenue; // rewardAddress => token => rewardAmount
     mapping(address => DataTypes.WTFCFees) public dappOperatorFees;
-    uint256 internal constant BPS_MAX = 10_000; // Lens uses uint16
-    string public _URI; // Should this be in the ModuleBase?
+    uint256 internal constant BPS_MAX = 10_000;
+    string public _URI;
 
     event ModuleBaseConstructed(address indexed registrar, uint256 timestamp);
 
